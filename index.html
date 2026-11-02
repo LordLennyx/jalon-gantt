@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jalon — planning de projet et diagramme de Gantt</title>
+<meta name="description" content="Jalon, outil de planification de projet : diagramme de Gantt interactif, dépendances avec replanification automatique, chemin critique, jalons et charge de l'équipe.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23f7f5f0'/%3E%3Crect x='5' y='8' width='12' height='4' rx='2' fill='%23333'/%3E%3Crect x='11' y='14' width='14' height='4' rx='2' fill='%23ec6a2c'/%3E%3Crect x='8' y='20' width='9' height='4' rx='2' fill='%23333'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f7f5f0;--paper:#fff;--ink:#22201c;--mute:#7c776d;--line:#e6e2d9;--acc:#ec6a2c;--crit:#d43d2a;--p1:#2f6db5;--p2:#3a8a5c;--p3:#8a56c2;--p4:#b88a1e}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:400 13.5px/1.4 'Sora',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}button{cursor:pointer}
+.mono{font-family:'JetBrains Mono',monospace}
+header{padding:16px 22px 0;max-width:1500px;margin:auto}
+.tp{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{font-weight:700;font-size:18px;display:flex;gap:8px;align-items:center}
+.logo svg{width:26px}
+.crumb{color:var(--mute)}
+.tp .sp{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:7px 12px;font-weight:600;font-size:13px}
+.btn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn.tg.on{background:#fde7dc;color:var(--crit);border-color:#f3b9a2}
+h1{font-size:28px;font-weight:600;letter-spacing:-.02em;margin:14px 0 4px}
+.sub{color:var(--mute);display:flex;gap:16px;flex-wrap:wrap}
+.kp{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:16px 0}
+.kp>div{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kp span{font-size:12px;color:var(--mute)}.kp b{display:block;font-size:22px;font-weight:600;margin-top:2px}
+.kp .pg{height:5px;background:var(--line);border-radius:3px;margin-top:8px;overflow:hidden}.kp .pg u{display:block;height:100%;background:var(--acc)}
+.tabs{display:flex;gap:20px;border-bottom:1px solid var(--line)}
+.tabs button{border:0;background:none;padding:10px 0;font-weight:600;color:var(--mute);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:var(--ink);border-color:var(--ink)}
+main{max-width:1500px;margin:auto;padding:14px 22px 40px}
+.view{display:none}.view.on{display:block}
+/* gantt */
+.gt{background:var(--paper);border:1px solid var(--line);border-radius:14px;display:grid;grid-template-columns:330px 1fr;overflow:hidden}
+.ls{border-right:1px solid var(--line)}
+.lh,.th{height:58px;border-bottom:1px solid var(--line);background:#fbfaf7}
+.lh{display:grid;grid-template-columns:1fr 60px 52px;align-items:end;padding:0 12px 8px;font-size:11.5px;color:var(--mute);font-weight:600}
+.row{height:38px;border-bottom:1px solid #f1eee8;display:grid;grid-template-columns:1fr 60px 52px;align-items:center;padding:0 12px;gap:6px}
+.row.ph{background:#faf8f3;font-weight:700}
+.row .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .n i{font-style:normal;color:var(--mute);font-size:11px;margin-right:6px}
+.row.hl{background:#fff4ec}
+.av{width:24px;height:24px;border-radius:50%;display:inline-grid;place-items:center;color:#fff;font-size:10px;font-weight:700}
+.row .d{color:var(--mute);font-size:12px;text-align:right}
+.tl{overflow-x:auto;position:relative}
+.th{position:sticky;top:0;display:flex;flex-direction:column;z-index:3}
+.th .m,.th .w{display:flex;flex:1}
+.th .m div{border-right:1px solid var(--line);font-weight:600;font-size:12px;padding:6px 8px;white-space:nowrap;overflow:hidden}
+.th .w div{border-right:1px solid #f1eee8;font-size:10.5px;color:var(--mute);padding:4px 4px;text-align:left;white-space:nowrap}
+.cv{position:relative}
+.cv .gl{position:absolute;top:0;bottom:0;border-left:1px solid #f4f1eb}
+.cv .we{position:absolute;top:0;bottom:0;background:#faf8f3}
+.cv .rw{height:38px;border-bottom:1px solid #f1eee8;position:relative}
+.cv .rw.hl{background:#fff4ec80}
+.bar{position:absolute;top:8px;height:22px;border-radius:6px;background:var(--c);cursor:grab;display:flex;align-items:center;touch-action:none;user-select:none;box-shadow:0 1px 0 rgba(0,0,0,.08)}
+.bar .pr{position:absolute;left:0;top:0;bottom:0;border-radius:6px 0 0 6px;background:rgba(0,0,0,.22)}
+.bar span{position:relative;color:#fff;font-size:11px;font-weight:600;padding:0 8px;white-space:nowrap;overflow:hidden;pointer-events:none}
+.bar .rz{position:absolute;right:-3px;top:0;bottom:0;width:10px;cursor:ew-resize}
+.bar.crit{outline:2px solid var(--crit);outline-offset:1px}
+.bar.drag{cursor:grabbing;box-shadow:0 6px 16px -4px rgba(0,0,0,.35);z-index:4}
+.bar.mv{transition:left .35s cubic-bezier(.2,.8,.2,1)}
+.bar .out{position:absolute;left:100%;margin-left:6px;color:var(--mute);font-size:11px;white-space:nowrap;pointer-events:none}
+.phb{position:absolute;top:14px;height:9px;background:var(--ink);border-radius:2px}
+.phb::before,.phb::after{content:"";position:absolute;bottom:-5px;border:5px solid transparent;border-top-color:var(--ink)}
+.phb::before{left:0;border-left-color:var(--ink)}.phb::after{right:0;border-right-color:var(--ink)}
+.ms{position:absolute;top:10px;width:18px;height:18px;transform:rotate(45deg);background:var(--acc);border:2px solid #fff;box-shadow:0 0 0 1px var(--acc)}
+.ms+b{position:absolute;top:10px;font-size:11.5px;white-space:nowrap}
+.today{position:absolute;top:0;bottom:0;border-left:2px solid var(--acc);z-index:2;pointer-events:none}
+.today b{position:absolute;top:-1px;left:-1px;transform:translateX(-50%);background:var(--acc);color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;white-space:nowrap}
+svg.dep{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+.tip{position:fixed;background:var(--ink);color:#fff;padding:8px 11px;border-radius:8px;font-size:12px;pointer-events:none;z-index:50;opacity:0;transition:opacity .15s;white-space:nowrap}
+.tip.on{opacity:1}
+.hint{color:var(--mute);font-size:12.5px;margin-top:10px}
+/* charge */
+.load{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;overflow-x:auto}
+.lg{display:grid;gap:3px;min-width:760px}
+.lg .c{height:36px;border-radius:5px;display:grid;place-items:center;font-size:11.5px;font-weight:600}
+.lg .h{font-size:11px;color:var(--mute);text-align:center;align-self:end}
+.lg .p{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px}
+.legend{display:flex;gap:14px;align-items:center;font-size:12px;color:var(--mute);margin-top:12px;flex-wrap:wrap}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+/* tâches */
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.bc{background:#efece5;border-radius:14px;padding:12px}
+.bc h4{font-size:12.5px;margin:0 2px 10px;display:flex;justify-content:space-between}
+.tc{background:var(--paper);border-radius:10px;padding:11px;margin-bottom:8px}
+.tc .t{font-weight:600;margin-bottom:6px}
+.tc .m{display:flex;justify-content:space-between;align-items:center;color:var(--mute);font-size:12px}
+.tc .pb{height:4px;background:var(--line);border-radius:2px;margin-top:8px;overflow:hidden}.tc .pb u{display:block;height:100%}
+.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:10px;opacity:0;transition:.3s;z-index:60;font-weight:600}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (max-width:900px){header,main{padding-left:14px;padding-right:14px}.kp{grid-template-columns:1fr 1fr}.gt{grid-template-columns:150px 1fr}.lh,.row{grid-template-columns:1fr}.lh span:not(:first-child),.row>*:not(.n){display:none}.board{grid-template-columns:1fr}.crumb{display:none}h1{font-size:22px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="tp"><div class="logo"><svg viewBox="0 0 32 32"><rect x="3" y="7" width="13" height="5" rx="2.5" fill="#22201c"/><rect x="10" y="14" width="16" height="5" rx="2.5" fill="#ec6a2c"/><rect x="6" y="21" width="10" height="5" rx="2.5" fill="#22201c"/></svg>Jalon</div><span class="crumb">Bâtiment · Projets 2026 ·</span>
+ <div class="sp"><button class="btn tg" id="crit">Chemin critique</button><button class="btn on" data-z="22">Jours</button><button class="btn" data-z="9">Semaines</button><button class="btn" id="undo">Annuler</button></div></div>
+ <h1>Construction de l'école primaire publique de Nkolbisson</h1>
+ <div class="sub"><span>Maître d'ouvrage : Commune de Yaoundé VII</span><span>Chef de projet : Ing. Clarisse Fouda</span><span id="dates"></span></div>
+ <div class="kp"><div><span>Avancement global</span><b id="k1"></b><div class="pg"><u id="k1b"></u></div></div><div><span>Fin prévue</span><b id="k2"></b></div><div><span>Marge restante</span><b id="k3"></b></div><div><span>Tâches en retard</span><b id="k4"></b></div><div><span>Budget engagé</span><b>61,4 M F</b></div></div>
+ <div class="tabs"><button class="on" data-v="gantt">Diagramme de Gantt</button><button data-v="load">Charge de l'équipe</button><button data-v="board">Tâches</button></div>
+</header>
+<main>
+ <section class="view on" id="v-gantt"><div class="gt"><div class="ls"><div class="lh"><span>Tâche</span><span>Durée</span><span>Resp.</span></div><div id="rows"></div></div><div class="tl" id="tl"><div class="th" id="th"></div><div class="cv" id="cv"></div></div></div>
+ <p class="hint">Faites glisser une barre pour la déplacer, tirez son bord droit pour changer sa durée : les tâches qui en dépendent se replanifient automatiquement.</p></section>
+ <section class="view" id="v-load"><div class="load" id="load"></div></section>
+ <section class="view" id="v-board"><div class="board" id="board"></div></section>
+</main>
+<div class="tip" id="tip"></div><div class="toast" id="toast"></div>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const P={CF:['Clarisse Fouda','#2f6db5'],AB:['Alain Biyong','#3a8a5c'],MN:['Martine Ngo','#8a56c2'],TE:['Théo Essomba','#b88a1e'],SK:['Serge Kamdem','#c2410c']};
+const DAY=864e5;const S0=new Date();S0.setHours(0,0,0,0);const START=new Date(S0.getTime()-30*DAY);// début du projet
+// tâches : id, nom, phase, début (jour), durée, dépendances, resp, avancement
+const T0=[
+ ['p1','Études et autorisations',null],['a1','Relevé topographique','p1',0,6,[],'AB',100],['a2','Plans d\'exécution','p1',6,12,['a1'],'CF',100],['a3','Permis de construire','p1',10,14,['a2'],'CF',100],['m1','Permis obtenu','p1',24,0,['a3'],'CF',100],
+ ['p2','Gros œuvre',null],['b1','Terrassement','p2',25,7,['m1'],'TE',100],['b2','Fondations','p2',32,10,['b1'],'TE',45],['b3','Élévation des murs','p2',42,16,['b2'],'TE',0],['b4','Dalle et chaînage','p2',58,8,['b3'],'SK',0],
+ ['p3','Second œuvre',null],['c1','Toiture','p3',66,9,['b4'],'SK',0],['c2','Électricité','p3',66,12,['b4'],'MN',0],['c3','Plomberie et sanitaires','p3',68,10,['b4'],'MN',0],['c4','Menuiseries','p3',75,7,['c1'],'AB',0],['c5','Enduits et peinture','p3',82,10,['c2','c3','c4'],'AB',0],
+ ['p4','Livraison',null],['d1','Équipement des classes','p4',92,6,['c5'],'CF',0],['d2','Réception des travaux','p4',98,2,['d1'],'CF',0],['m2','Rentrée dans les locaux','p4',100,0,['d2'],'CF',0]];
+let T=T0.map(a=>a[2]===null?{id:a[0],n:a[1],ph:true}:{id:a[0],n:a[1],ph:false,phase:a[2],s:a[3],d:a[4],dep:a[5],r:a[6],pr:a[7],ms:a[4]===0});
+const byId=id=>T.find(t=>t.id===id);let PX=22,critOn=false,hist=[];
+const dt=n=>new Date(START.getTime()+n*DAY);const fd=n=>dt(n).toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+const todayN=Math.round((S0-START)/DAY);
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._);t._=setTimeout(()=>t.classList.remove('on'),2400)}
+// replanification : chaque tâche commence au plus tôt après la fin de ses prédécesseurs
+function reflow(){let ch=true,moved=[];while(ch){ch=false;T.filter(t=>!t.ph).forEach(t=>{const e=Math.max(0,...t.dep.map(i=>{const p=byId(i);return p.s+p.d}));if(t.s<e){t.s=e;ch=true;moved.push(t.id)}})}return [...new Set(moved)]}
+function critical(){const L=T.filter(t=>!t.ph),end=Math.max(...L.map(t=>t.s+t.d)),late={};
+ [...L].sort((a,b)=>b.s-a.s).forEach(t=>{const succ=L.filter(x=>x.dep.includes(t.id));late[t.id]=succ.length?Math.min(...succ.map(x=>late[x.id]-t.d)):end-t.d});
+ return {set:new Set(L.filter(t=>late[t.id]-t.s<=0).map(t=>t.id)),slack:Math.min(...L.filter(t=>!t.ms).map(t=>late[t.id]-t.s).filter(v=>v>0)),end}}
+function phaseSpan(id){const k=T.filter(t=>t.phase===id);const s=Math.min(...k.map(t=>t.s)),e=Math.max(...k.map(t=>t.s+t.d));return {s,d:e-s,pr:Math.round(k.filter(t=>!t.ms).reduce((a,t)=>a+t.pr*t.d,0)/k.filter(t=>!t.ms).reduce((a,t)=>a+t.d,0))}}
+function kpis(){const L=T.filter(t=>!t.ph&&!t.ms),tot=L.reduce((a,t)=>a+t.d,0),pr=Math.round(L.reduce((a,t)=>a+t.pr*t.d,0)/tot),c=critical();
+ $('#k1').textContent=pr+' %';$('#k1b').style.width=pr+'%';$('#k2').textContent=dt(c.end).toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
+ const late=L.filter(t=>t.s+t.d*t.pr/100<todayN-.5&&t.pr<100).length;$('#k4').textContent=late;$('#k4').style.color=late?'var(--crit)':'';
+ const dl=Math.round((dt(c.end)-new Date(2027,2,15))/DAY);$('#k3').textContent=dl<=0?`${-dl} j`:`dépassement ${dl} j`;$('#k3').style.color=dl>0?'var(--crit)':'';
+ $('#dates').textContent=`Du ${fd(0)} au ${dt(c.end).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})} · objectif : 15 mars 2027`}
+function render(moved=[]){const c=critical(),N=Math.max(c.end+14,110),W=N*PX;
+ $('#rows').innerHTML=T.map(t=>{if(t.ph){const p=phaseSpan(t.id);return `<div class="row ph" data-id="${t.id}"><span class="n">${t.n}</span><span class="d">${p.d} j</span><span class="d">${p.pr} %</span></div>`}
+  return `<div class="row" data-id="${t.id}"><span class="n"><i>${t.id.toUpperCase()}</i>${t.n}</span><span class="d">${t.ms?'jalon':t.d+' j'}</span><span><span class="av" style="background:${P[t.r][1]}" title="${P[t.r][0]}">${t.r}</span></span></div>`}).join('');
+ // en-tête
+ let m='',w='',x=0;for(let i=0;i<N;){const d=dt(i),days=new Date(d.getFullYear(),d.getMonth()+1,0).getDate()-d.getDate()+1,k=Math.min(days,N-i);m+=`<div style="width:${k*PX}px;flex:none">${d.toLocaleDateString('fr-FR',{month:'long',year:'numeric'})}</div>`;i+=k}
+ const step=PX>=18?1:7;for(let i=0;i<N;i+=step){const d=dt(i);w+=`<div style="width:${step*PX}px;flex:none">${step===1?d.getDate():'S'+Math.ceil(((d-new Date(d.getFullYear(),0,1))/DAY+1)/7)}</div>`}
+ $('#th').innerHTML=`<div class="m">${m}</div><div class="w">${w}</div>`;$('#th').style.width=W+'px';
+ let g='';if(PX>=18)for(let i=0;i<N;i++){if([0,6].includes(dt(i).getDay()))g+=`<div class="we" style="left:${i*PX}px;width:${PX}px"></div>`}for(let i=0;i<N;i+=7)g+=`<div class="gl" style="left:${i*PX}px"></div>`;
+ g+=T.map(t=>{if(t.ph){const p=phaseSpan(t.id);return `<div class="rw"><div class="phb" style="left:${p.s*PX}px;width:${p.d*PX}px"></div></div>`}
+  if(t.ms)return `<div class="rw"><div class="ms" style="left:${t.s*PX-9}px"></div><b style="left:${t.s*PX+16}px">${t.n} · ${fd(t.s)}</b></div>`;
+  const col=P[t.r][1],cr=critOn&&c.set.has(t.id);return `<div class="rw" data-id="${t.id}"><div class="bar ${cr?'crit':''} ${moved.includes(t.id)?'mv':''}" data-id="${t.id}" style="--c:${col};left:${t.s*PX}px;width:${Math.max(t.d*PX,8)}px"><div class="pr" style="width:${t.pr}%"></div><span>${t.d*PX>70?t.pr+' %':''}</span><div class="rz"></div><div class="out">${t.n}</div></div></div>`}).join('');
+ g+=`<div class="today" style="left:${todayN*PX}px"><b>aujourd'hui</b></div><svg class="dep" width="${W}" height="${T.length*38}"><defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 8 4 0 8z" fill="#9b958a"/></marker><marker id="ahc" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 8 4 0 8z" fill="#d43d2a"/></marker></defs>${T.filter(t=>!t.ph).map(t=>t.dep.map(i=>{const p=byId(i),y1=T.indexOf(p)*38+19,y2=T.indexOf(t)*38+19,x1=(p.s+p.d)*PX+(p.ms?9:0),x2=t.s*PX-(t.ms?10:1),cc=critOn&&c.set.has(t.id)&&c.set.has(p.id);
+  return `<path d="M${x1} ${y1} h8 V${y2} H${x2}" fill="none" stroke="${cc?'#d43d2a':'#b9b3a7'}" stroke-width="${cc?1.8:1.2}" marker-end="url(#${cc?'ahc':'ah'})"/>`}).join('')).join('')}</svg>`;
+ $('#cv').innerHTML=g;$('#cv').style.width=W+'px';kpis()}
+// glisser / redimensionner
+let drag=null;
+$('#cv').addEventListener('pointerdown',e=>{const b=e.target.closest('.bar');if(!b)return;const t=byId(b.dataset.id);hist.push(JSON.stringify(T.map(x=>[x.s,x.d])));drag={t,b,x:e.clientX,s:t.s,d:t.d,rz:e.target.classList.contains('rz')};b.classList.add('drag');b.setPointerCapture(e.pointerId)});
+$('#cv').addEventListener('pointermove',e=>{if(!drag){const b=e.target.closest('.bar');const tip=$('#tip');if(b){const t=byId(b.dataset.id);tip.innerHTML=`<b>${t.n}</b><br>${fd(t.s)} → ${fd(t.s+t.d-1)} · ${t.d} jours · ${t.pr} %<br>${P[t.r][0]}${t.dep.length?' · après '+t.dep.map(i=>i.toUpperCase()).join(', '):''}`;tip.style.left=e.clientX+14+'px';tip.style.top=e.clientY+14+'px';tip.classList.add('on')}else tip.classList.remove('on');return}
+ const dx=Math.round((e.clientX-drag.x)/PX),t=drag.t;if(drag.rz){t.d=Math.max(1,drag.d+dx);drag.b.style.width=t.d*PX+'px'}else{const mn=Math.max(0,...t.dep.map(i=>{const p=byId(i);return p.s+p.d}));t.s=Math.max(mn,drag.s+dx);drag.b.style.left=t.s*PX+'px'}});
+$('#cv').addEventListener('pointerup',()=>{if(!drag)return;const t=drag.t,ch=t.s!==drag.s||t.d!==drag.d;drag=null;if(!ch){hist.pop();return render()}const mv=reflow();render(mv);if(mv.length)toast(`${mv.length} tâche${mv.length>1?'s':''} replanifiée${mv.length>1?'s':''} automatiquement`)});
+$('#cv').addEventListener('pointerleave',()=>$('#tip').classList.remove('on'));
+window.__decale=(id,days)=>{hist.push(JSON.stringify(T.map(x=>[x.s,x.d])));const t=byId(id);t.d+=days;const mv=reflow();render([id,...mv]);toast(`« ${t.n} » prolongée de ${days} jours : ${mv.length} tâches replanifiées`)};
+$('#undo').onclick=()=>{const h=hist.pop();if(!h)return toast('Rien à annuler');JSON.parse(h).forEach((v,i)=>{T[i].s=v[0];T[i].d=v[1]});render(T.map(t=>t.id))};
+$('#crit').onclick=()=>{critOn=!critOn;$('#crit').classList.toggle('on',critOn);render();if(critOn)toast('Chemin critique : tout retard sur ces tâches décale la livraison')};
+$$('[data-z]').forEach(b=>b.onclick=()=>{PX=+b.dataset.z;$$('[data-z]').forEach(x=>x.classList.toggle('on',x===b));render()});
+$('#rows').onmouseover=e=>{const r=e.target.closest('.row');$$('.hl').forEach(x=>x.classList.remove('hl'));if(r){r.classList.add('hl');const w=$(`.rw[data-id="${r.dataset.id}"]`);w&&w.classList.add('hl')}};
+// charge par personne et par semaine
+function load(){const L=T.filter(t=>!t.ph&&!t.ms),end=critical().end,W=Math.ceil(end/7);
+ let h=`<div class="lg" style="grid-template-columns:150px repeat(${W},1fr)"><div></div>${[...Array(W)].map((_,i)=>`<div class="h">${dt(i*7).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}</div>`).join('')}`;
+ Object.entries(P).forEach(([k,[n,c]])=>{h+=`<div class="p"><span class="av" style="background:${c}">${k}</span>${n.split(' ')[0]}</div>`;
+  for(let i=0;i<W;i++){const d=L.filter(t=>t.r===k).reduce((a,t)=>a+Math.max(0,Math.min(t.s+t.d,i*7+7)-Math.max(t.s,i*7)),0),pc=Math.round(d/7*100);
+   h+=`<div class="c" title="${n} : ${d} jours de tâches sur 7" style="background:${pc>100?'#f6c9bf':pc>0?`color-mix(in srgb,${c} ${Math.min(80,pc*.6+12)}%,white)`:'#f5f3ee'};color:${pc>100?'#a3271a':pc>55?'#fff':'#22201c'}">${pc?pc+' %':''}</div>`}});
+ $('#load').innerHTML=h+'</div><div class="legend"><span>Charge hebdomadaire : jours de tâches cumulés sur la semaine</span><span><i style="background:#f6c9bf"></i>surcharge, à lisser</span><span>Déplacez des tâches dans le Gantt pour rééquilibrer.</span></div>'}
+function board(){const L=T.filter(t=>!t.ph&&!t.ms),G=[['À faire',L.filter(t=>t.pr===0)],['En cours',L.filter(t=>t.pr>0&&t.pr<100)],['Terminé',L.filter(t=>t.pr===100)]];
+ $('#board').innerHTML=G.map(([n,l])=>`<div class="bc"><h4>${n}<span style="color:var(--mute)">${l.length}</span></h4>${l.map(t=>`<div class="tc"><div class="t">${t.n}</div><div class="m"><span>${fd(t.s)} → ${fd(t.s+t.d-1)}</span><span class="av" style="background:${P[t.r][1]}">${t.r}</span></div><div class="pb"><u style="width:${t.pr}%;background:${P[t.r][1]}"></u></div></div>`).join('')}</div>`).join('')}
+function view(v){$$('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));$$('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));if(v==='load')load();if(v==='board')board()}
+$$('.tabs button').forEach(b=>b.onclick=()=>view(b.dataset.v));window.__vue=view;
+reflow();render();$('#tl').scrollLeft=Math.max(0,(todayN-12)*PX);
+</script>
+</body>
+</html>

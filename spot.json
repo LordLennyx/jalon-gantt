@@ -1,0 +1,21 @@
+{
+ "titre": "<em>Jalon</em>, planning de projet",
+ "type": "Gestion de projet · diagramme de Gantt",
+ "sous_titre": "Gantt interactif, dépendances, chemin critique, charge de l'équipe",
+ "couleur": "#22201c",
+ "graine": 29,
+ "voix": [
+  [3.3, "Jalon, la planification de projet pour les chantiers et les équipes,"],
+  [8.4, "si une tâche prend du retard, toutes celles qui en dépendent se replanifient seules,"],
+  [16.6, "le chemin critique saute aux yeux, et la charge de chacun aussi."]
+ ],
+ "etapes": [
+  {"t": "wait", "ms": 1200},
+  {"t": "eval", "js": "window.__decale('b2',6)", "pause": 2600},
+  {"t": "click", "sel": "#crit", "pause": 2400},
+  {"t": "eval", "js": "document.getElementById('tl').scrollTo({left:document.getElementById('tl').scrollLeft+700,behavior:'smooth'})", "pause": 2000},
+  {"t": "click", "sel": "[data-z='9']", "pause": 1800},
+  {"t": "click", "sel": ".tabs button[data-v=load]", "pause": 2600},
+  {"t": "click", "sel": ".tabs button[data-v=board]", "pause": 2000}
+ ]
+}
